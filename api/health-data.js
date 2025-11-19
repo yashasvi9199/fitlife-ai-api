@@ -6,8 +6,14 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  const { method } = req; // Add this line
+  
+  //Debugging log
+  console.log('Environment check:', {
+      hasUrl: !!process.env.VITE_SUPABASE_URL,
+      hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    });
 
+  const { method } = req; // Fix for method not found
   if (method === 'POST') {
     try {
       const { user_id, type, value, date } = req.body;
@@ -19,7 +25,8 @@ export default async function handler(req, res) {
       if (error) throw error;
       return res.status(200).json(data);
     } catch (error) {
-      return res.status(500).json({ error: error.message });
+        console.error('Handler error:', error);
+        return res.status(500).json({ error: error.message });
     }
   }
 }
