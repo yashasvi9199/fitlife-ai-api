@@ -28,5 +28,21 @@ export default async function handler(req, res) {
         console.error('Handler error:', error);
         return res.status(500).json({ error: error.message });
     }
+  } else if(method === 'POST'){
+      try {
+        const { searchParams } = new URL(request.url);
+        const user_id = searchParams.get('user_id');
+        const type = searchParams.get('type');
+        
+        let query = supabase.from('health_records').select('*').eq('user_id', user_id);
+        if (type) query = query.eq('type', type);
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        return new Response(JSON.stringify(data), { status: 200 });
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    }
   }
 }
