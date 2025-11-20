@@ -14,7 +14,7 @@ export default async function handler(req, res){
 
         const {data, error} = await supabase
             .from('fitness_routines')
-            .insert( [{ user_id, name, exercise }])
+            .insert( [{ user_id, name, exercises }])
             .select();
 
         if (error) throw error;
