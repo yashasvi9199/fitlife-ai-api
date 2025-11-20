@@ -1,5 +1,4 @@
 const { createClient } = require('@supabase/supabase-js');
-const axios = require('axios');
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -49,9 +48,35 @@ export default async function handler(req, res) {
 
       if (error || !profile.telegram_chat_id) throw new Error('No Telegram chat ID');
 
-      await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      // Send message using native https module instead of axios
+      const https = require('https');
+      const postData = JSON.stringify({
         chat_id: profile.telegram_chat_id,
         text: message
+      });
+
+      const options = {
+        hostname: 'api.telegram.org',
+        port: 443,
+        path: `/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      };
+
+      await new Promise((resolve, reject) => {
+        const req = https.request(options, (res) => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Telegram API error: ${res.statusCode}`));
+          }
+        });
+        req.on('error', reject);
+        req.write(postData);
+        req.end();
       });
 
       return res.status(200).json({ success: true });
