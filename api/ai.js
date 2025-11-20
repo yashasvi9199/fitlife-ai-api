@@ -14,8 +14,10 @@ module.exports = async function handler(req, res) {
     // ANALYZE IMAGE
     if (method === 'POST' && action === 'analyze') {
       const { image } = req.body;
+      
+      // Use signed upload (no preset needed)
       const result = await cloudinary.uploader.upload(image, {
-        upload_preset: process.env.VITE_CLOUDINARY_UPLOAD_PRESET
+        folder: 'fitlife-food-images'
       });
 
       // Simulate nutrition analysis (replace with actual AI)
