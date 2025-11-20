@@ -12,6 +12,7 @@ module.exports = async function handler(req, res) {
     // WEBHOOK (for Telegram bot)
     if (method === 'POST' && action === 'webhook') {
       const { message } = req.body;
+      console.log('Chat ID:', message?.chat?.id); // ⭐ Check Vercel logs to get user chat ID
       if (message?.text?.startsWith('/start')) {
         const userUuid = message.text.split(' ')[1];
         if (userUuid) {
