@@ -1,0 +1,43 @@
+const cloudinary = require('cloudinary').v2;
+const axios = require('axios');
+
+cloudinary.config({
+  cloud_name: process.env.VITE_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.VITE_CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+export default async function handler(req, res) {
+  const { method } = req;
+  const { action } = req.query;
+
+  try {
+    // ANALYZE IMAGE
+    if (method === 'POST' && action === 'analyze') {
+      const { image } = req.body;
+      const result = await cloudinary.uploader.upload(image, {
+        upload_preset: process.env.VITE_CLOUDINARY_UPLOAD_PRESET
+      });
+
+      // Simulate nutrition analysis (replace with actual AI)
+      const calories = Math.floor(Math.random() * 500) + 100;
+
+      return res.status(200).json({
+        image_url: result.secure_url,
+        calories,
+        nutrition: { protein: 15, carbs: 45, fat: 10 }
+      });
+    }
+
+    // GET NUTRITION DATA
+    if (method === 'GET' && action === 'nutrition') {
+      const { barcode } = req.query;
+      const response = await axios.get(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+      return res.status(200).json(response.data);
+    }
+
+    return res.status(400).json({ error: 'Invalid action or method' });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+}
