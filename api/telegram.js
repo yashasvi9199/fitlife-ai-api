@@ -11,28 +11,16 @@ module.exports = async function handler(req, res) {
   try {
     // WEBHOOK (for Telegram bot)
     if (method === 'POST' && action === 'webhook') {
-      console.log('=== TELEGRAM WEBHOOK TRIGGERED ===');
-      console.log('Full request body:', JSON.stringify(req.body, null, 2));
-      
       const { message } = req.body;
-      
-      if (message) {
-        console.log('Chat ID:', message.chat?.id);
-        console.log('User ID:', message.from?.id);
-        console.log('Message text:', message.text);
-      }
       
       if (message?.text?.startsWith('/start')) {
         const userUuid = message.text.split(' ')[1];
-        console.log('Extracted UUID:', userUuid);
         
         if (userUuid) {
-          const result = await supabase
+          await supabase
             .from('profiles')
             .update({ telegram_chat_id: message.chat.id })
             .eq('id', userUuid);
-          
-          console.log('Supabase update result:', result);
         }
       }
       return res.status(200).end();
@@ -98,10 +86,10 @@ module.exports = async function handler(req, res) {
 
     // SET REMINDER TIME
     if (method === 'POST' && action === 'reminder-time') {
-      const { user_id, reminder_time, timezone } = req.body;
+      const { user_id, reminder_time } = req.body;
       const { data, error } = await supabase
         .from('profiles')
-        .update({ reminder_time, timezone })
+        .update({ reminder_time })
         .eq('id', user_id)
         .select();
 
