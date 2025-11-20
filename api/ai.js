@@ -7,6 +7,16 @@ cloudinary.config({
 });
 
 module.exports = async function handler(req, res) {
+  // CORS headers - Allow requests from frontend
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   const { method } = req;
   const { action } = req.query;
 

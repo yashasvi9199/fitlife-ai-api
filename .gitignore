@@ -2,4 +2,3 @@ node_modules/
 .env
 .DS_Store
 *.log
-API_TESTING_GUIDE.md
