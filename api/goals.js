@@ -38,7 +38,7 @@ export default async function handler(req, res) {
       const { id, target } = req.body;
       const { data, error } = await supabase
         .from('goals')
-        .update({ target, updated_at: new Date() })
+        .update({ target })
         .eq('id', id)
         .select();
 

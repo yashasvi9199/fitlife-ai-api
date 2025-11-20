@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       const { id, completed } = req.body;
       const { data, error } = await supabase
         .from('calendar_events')
-        .update({ completed, updated_at: new Date() })
+        .update({ completed })
         .eq('id', id)
         .select();
 
