@@ -6,7 +6,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { method } = req;
   const { action } = req.query;
 
