@@ -11,15 +11,28 @@ module.exports = async function handler(req, res) {
   try {
     // WEBHOOK (for Telegram bot)
     if (method === 'POST' && action === 'webhook') {
+      console.log('=== TELEGRAM WEBHOOK TRIGGERED ===');
+      console.log('Full request body:', JSON.stringify(req.body, null, 2));
+      
       const { message } = req.body;
-      console.log('Chat ID:', message?.chat?.id); // ⭐ Check Vercel logs to get user chat ID
+      
+      if (message) {
+        console.log('Chat ID:', message.chat?.id);
+        console.log('User ID:', message.from?.id);
+        console.log('Message text:', message.text);
+      }
+      
       if (message?.text?.startsWith('/start')) {
         const userUuid = message.text.split(' ')[1];
+        console.log('Extracted UUID:', userUuid);
+        
         if (userUuid) {
-          await supabase
+          const result = await supabase
             .from('profiles')
             .update({ telegram_chat_id: message.chat.id })
             .eq('id', userUuid);
+          
+          console.log('Supabase update result:', result);
         }
       }
       return res.status(200).end();
