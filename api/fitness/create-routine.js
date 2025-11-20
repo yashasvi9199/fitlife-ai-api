@@ -10,7 +10,7 @@ export default async function handler(req, res){
     }
 
     try{
-        const {user_id, name, exercise } = req.body;
+        const {user_id, name, exercises } = req.body;
 
         const {data, error} = await supabase
             .from('fitness_routines')
