@@ -19,6 +19,18 @@ module.exports = async function handler(req, res) {
   const { action } = req.query;
 
   try {
+    // CREATE PROFILE (for signup)
+    if (method === 'POST' && action === 'create') {
+      const { user_id, name, mobile, age, gender, city, state, country } = req.body;
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([{ id: user_id, name, mobile, age, gender, city, state, country }])
+        .select();
+
+      if (error) throw error;
+      return res.status(200).json(data[0]);
+    }
+
     // GET PROFILE
     if (method === 'GET' && action === 'profile') {
       const { user_id } = req.query;
