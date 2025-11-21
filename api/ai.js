@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
       });
 
       // Analyze with Gemini Vision
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       
       const prompt = `Analyze this food image and provide nutrition information in JSON format.
 Return ONLY a valid JSON object with this exact structure (no markdown, no extra text):
@@ -179,6 +179,33 @@ For the 'rating', give a score from 1 to 5 stars based on global health standard
         return res.status(500).json({ 
           error: 'Failed to generate analysis', 
           details: genError.message 
+        });
+      }
+    }
+
+    // GENERATE MOTIVATION QUOTE
+    if (method === 'POST' && action === 'quote') {
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const prompt = `Generate a single, short, energetic, and inspirational health/fitness quote. 
+      Return ONLY a JSON object with this structure:
+      {
+        "quote": "The quote text",
+        "author": "Author Name or Unknown"
+      }
+      Do not use markdown.`;
+
+      try {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const data = JSON.parse(jsonStr);
+        return res.status(200).json(data);
+      } catch (error) {
+        console.error('Quote Generation Error:', error);
+        // Fallback quote
+        return res.status(200).json({ 
+          quote: "The only bad workout is the one that didn't happen.", 
+          author: "Unknown" 
         });
       }
     }
