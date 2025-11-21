@@ -112,23 +112,60 @@ Estimate realistic values based on typical serving sizes.`;
       
       const prompt = `You are a sophisticated health advisor AI. Analyze the following health metrics for a user:
 
+Weight: ${req.body.weight || 'Not tracked'} kg
 Steps: ${steps || 'Not tracked'}
 Heart Rate: ${heart_rate || 'Not tracked'} bpm
-Blood Pressure: ${blood_pressure || 'Not tracked'} mmHg (systolic)
+Blood Pressure: ${blood_pressure || 'Not tracked'} mmHg
 Blood Sugar: ${blood_sugar || 'Not tracked'} mg/dL
 Sleep Hours: ${sleep_hours || 'Not tracked'} hours
 
-Your task:
-1. Compare these specific values against global health standards (cite WHO, CDC, or AHA guidelines where relevant).
-2. Identify any potential risks or excellent progress.
-3. Provide a "Smart Analysis" summary that feels personalized and medical-grade but easy to understand.
-4. Give 1-2 specific, actionable recommendations.
+Your task is to provide a structured analysis for EACH metric.
+Return ONLY a valid JSON object with this exact structure (no markdown formatting, just raw JSON):
 
-Format the output as a concise but insightful paragraph. Do not use markdown formatting like bolding or headers, just plain text.`;
+{
+  "metrics": [
+    {
+      "title": "Weight Analysis",
+      "icon": "⚖️",
+      "analysis": "Brief analysis of weight status...",
+      "rating": 4
+    },
+    {
+      "title": "Activity & Steps",
+      "icon": "👣",
+      "analysis": "Analysis of activity level...",
+      "rating": 3
+    },
+    {
+      "title": "Heart Health",
+      "icon": "❤️",
+      "analysis": "Analysis of heart rate and BP...",
+      "rating": 5
+    },
+    {
+      "title": "Blood Sugar",
+      "icon": "🍬",
+      "analysis": "Analysis of blood sugar levels...",
+      "rating": 4
+    },
+    {
+      "title": "Sleep Quality",
+      "icon": "😴",
+      "analysis": "Analysis of sleep patterns...",
+      "rating": 2
+    }
+  ],
+  "overall_summary": "One sentence summary of overall health."
+}
+
+For the 'rating', give a score from 1 to 5 stars based on global health standards (WHO/CDC). 5 is excellent, 1 is critical.`;
 
       try {
         const result = await model.generateContent(prompt);
-        const analysis = result.response.text();
+        const text = result.response.text();
+        // Clean up any potential markdown code blocks from the response
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const analysis = JSON.parse(jsonStr);
         
         return res.status(200).json({ analysis });
       } catch (genError) {
