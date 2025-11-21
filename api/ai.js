@@ -108,7 +108,7 @@ Estimate realistic values based on typical serving sizes.`;
     if (method === 'POST' && action === 'analyze-health') {
       const { steps, heart_rate, blood_pressure, blood_sugar, sleep_hours } = req.body;
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       const prompt = `You are a sophisticated health advisor AI. Analyze the following health metrics for a user:
 
@@ -143,7 +143,7 @@ Format the output as a concise but insightful paragraph. Do not use markdown for
     // TEST CONNECTION
     if (method === 'POST' && action === 'test-connection') {
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
         const prompt = "Hello, are you working? Reply with 'Yes, I am functional.'";
         
         const result = await model.generateContent(prompt);
@@ -151,7 +151,7 @@ Format the output as a concise but insightful paragraph. Do not use markdown for
         
         return res.status(200).json({ 
           message: message,
-          model: 'gemini-1.5-flash',
+          model: 'gemini-pro',
           status: 'connected'
         });
       } catch (error) {
