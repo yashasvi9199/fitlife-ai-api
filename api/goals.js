@@ -56,6 +56,18 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(data[0]);
     }
 
+    // DELETE GOAL
+    if (method === 'DELETE' && action === 'delete') {
+      const { id } = req.query;
+      const { error } = await supabase
+        .from('goals')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return res.status(200).json({ message: 'Goal deleted successfully' });
+    }
+
     return res.status(400).json({ error: 'Invalid action or method' });
   } catch (error) {
     return res.status(500).json({ error: error.message });
