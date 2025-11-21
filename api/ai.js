@@ -104,6 +104,28 @@ Estimate realistic values based on typical serving sizes.`;
       return res.status(200).json(nutritionData);
     }
 
+    // ANALYZE HEALTH DATA
+    if (method === 'POST' && action === 'analyze-health') {
+      const { steps, heart_rate, blood_pressure, blood_sugar, sleep_hours } = req.body;
+      
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
+      const prompt = `You are a health advisor AI. Analyze the following health metrics and provide a concise, actionable health suggestion (max 2-3 sentences):
+
+Steps: ${steps || 'Not tracked'}
+Heart Rate: ${heart_rate || 'Not tracked'} bpm
+Blood Pressure: ${blood_pressure || 'Not tracked'} mmHg (systolic)
+Blood Sugar: ${blood_sugar || 'Not tracked'} mg/dL
+Sleep Hours: ${sleep_hours || 'Not tracked'} hours
+
+Compare these values with global medical standards and provide personalized advice. Be encouraging and specific.`;
+
+      const result = await model.generateContent(prompt);
+      const analysis = result.response.text();
+      
+      return res.status(200).json({ analysis });
+    }
+
     return res.status(400).json({ error: 'Invalid action or method' });
   } catch (error) {
     console.error('API Error:', error);

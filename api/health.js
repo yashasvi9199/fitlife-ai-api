@@ -19,16 +19,59 @@ module.exports = async function handler(req, res) {
   const { action } = req.query;
 
   try {
-    // CREATE RECORD
+    // CREATE RECORD (Single or Multiple)
     if (method === 'POST' && action === 'create') {
-      const { user_id, type, value, date } = req.body;
+      const body = req.body;
+      let recordsToInsert = [];
+
+      if (Array.isArray(body)) {
+        recordsToInsert = body.map(record => ({
+          user_id: record.user_id,
+          type: record.type,
+          value: record.value,
+          date: record.date || new Date().toISOString().split('T')[0]
+        }));
+      } else {
+        recordsToInsert = [{
+          user_id: body.user_id,
+          type: body.type,
+          value: body.value,
+          date: body.date || new Date().toISOString().split('T')[0]
+        }];
+      }
+
       const { data, error } = await supabase
         .from('health_records')
-        .insert([{ user_id, type, value, date: date || new Date().toISOString().split('T')[0] }])
+        .insert(recordsToInsert)
         .select();
       
       if (error) throw error;
+      return res.status(200).json(data);
+    }
+
+    // UPDATE RECORD
+    if (method === 'PUT' && action === 'update') {
+      const { id, type, value, date } = req.body;
+      const { data, error } = await supabase
+        .from('health_records')
+        .update({ type, value, date })
+        .eq('id', id)
+        .select();
+
+      if (error) throw error;
       return res.status(200).json(data[0]);
+    }
+
+    // DELETE RECORD
+    if (method === 'DELETE' && action === 'delete') {
+      const { id } = req.query;
+      const { error } = await supabase
+        .from('health_records')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return res.status(200).json({ message: 'Record deleted successfully' });
     }
 
     // GET RECORDS
@@ -37,7 +80,8 @@ module.exports = async function handler(req, res) {
       let query = supabase
         .from('health_records')
         .select('*')
-        .eq('user_id', user_id);
+        .eq('user_id', user_id)
+        .order('date', { ascending: false }); // Order by date descending
       
       if (type) query = query.eq('type', type);
       
