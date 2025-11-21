@@ -1,10 +1,14 @@
 const cloudinary = require('cloudinary').v2;
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 cloudinary.config({
   cloud_name: process.env.VITE_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.VITE_CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 module.exports = async function handler(req, res) {
   // CORS headers - Allow requests from frontend
@@ -25,18 +29,55 @@ module.exports = async function handler(req, res) {
     if (method === 'POST' && action === 'analyze') {
       const { image } = req.body;
       
-      // Use signed upload (no preset needed)
+      // Upload to Cloudinary
       const result = await cloudinary.uploader.upload(image, {
         folder: 'fitlife-food-images'
       });
 
-      // Simulate nutrition analysis (replace with actual AI)
-      const calories = Math.floor(Math.random() * 500) + 100;
+      // Analyze with Gemini Vision
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
+      const prompt = `Analyze this food image and provide nutrition information in JSON format.
+Return ONLY a valid JSON object with this exact structure (no markdown, no extra text):
+{
+  "calories": <number>,
+  "protein": <number in grams>,
+  "carbs": <number in grams>,
+  "fat": <number in grams>
+}
+Estimate realistic values based on typical serving sizes.`;
+
+      // Convert base64 to image part
+      const imagePart = {
+        inlineData: {
+          data: image.split(',')[1], // Remove data:image/xxx;base64, prefix
+          mimeType: image.split(';')[0].split(':')[1]
+        }
+      };
+
+      const geminiResult = await model.generateContent([prompt, imagePart]);
+      const responseText = geminiResult.response.text();
+      
+      // Parse JSON from response
+      let nutritionData;
+      try {
+        // Remove markdown code blocks if present
+        const jsonText = responseText.replace(/```json\n?|\n?```/g, '').trim();
+        nutritionData = JSON.parse(jsonText);
+      } catch (parseError) {
+        console.error('Failed to parse Gemini response:', responseText);
+        // Fallback to default values
+        nutritionData = { calories: 250, protein: 15, carbs: 30, fat: 10 };
+      }
 
       return res.status(200).json({
         image_url: result.secure_url,
-        calories,
-        nutrition: { protein: 15, carbs: 45, fat: 10 }
+        calories: nutritionData.calories,
+        nutrition: {
+          protein: nutritionData.protein,
+          carbs: nutritionData.carbs,
+          fat: nutritionData.fat
+        }
       });
     }
 
@@ -65,6 +106,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(400).json({ error: 'Invalid action or method' });
   } catch (error) {
+    console.error('API Error:', error);
     return res.status(500).json({ error: error.message });
   }
 }

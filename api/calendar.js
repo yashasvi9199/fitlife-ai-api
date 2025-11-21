@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
       const { user_id, title, type, date } = req.body;
       const { data, error } = await supabase
         .from('calendar_events')
-        .insert([{ user_id, title, type, date }])
+        .insert([{ user_id, title, type, date, completed: false }])
         .select();
 
       if (error) throw error;
