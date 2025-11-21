@@ -108,7 +108,7 @@ Estimate realistic values based on typical serving sizes.`;
     if (method === 'POST' && action === 'analyze-health') {
       const { steps, heart_rate, blood_pressure, blood_sugar, sleep_hours } = req.body;
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       
       const prompt = `You are a sophisticated health advisor AI. Analyze the following health metrics for a user:
 
