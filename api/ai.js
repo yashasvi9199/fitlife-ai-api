@@ -143,15 +143,34 @@ Format the output as a concise but insightful paragraph. Do not use markdown for
     // TEST CONNECTION
     if (method === 'POST' && action === 'test-connection') {
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-        const prompt = "Hello, are you working? Reply with 'Yes, I am functional.'";
+        // 1. List available models
+        const listResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+        const listData = await listResponse.json();
+        
+        if (!listResponse.ok) {
+          throw new Error(`Failed to list models: ${listData.error?.message || listResponse.statusText}`);
+        }
+
+        const availableModels = listData.models 
+          ? listData.models.filter(m => m.supportedGenerationMethods?.includes('generateContent')).map(m => m.name)
+          : [];
+
+        // 2. Try to generate content with a known model (preferring flash, then pro)
+        const modelName = availableModels.find(m => m.includes('flash')) || availableModels.find(m => m.includes('pro')) || 'models/gemini-pro';
+        
+        // Clean up model name for SDK if needed (SDK usually takes 'gemini-pro', API returns 'models/gemini-pro')
+        const sdkModelName = modelName.replace('models/', '');
+
+        const model = genAI.getGenerativeModel({ model: sdkModelName });
+        const prompt = "Hello, are you working? Reply with 'Yes'.";
         
         const result = await model.generateContent(prompt);
         const message = result.response.text();
         
         return res.status(200).json({ 
           message: message,
-          model: 'gemini-pro',
+          testedModel: sdkModelName,
+          availableModels: availableModels,
           status: 'connected'
         });
       } catch (error) {
