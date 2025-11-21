@@ -110,7 +110,7 @@ Estimate realistic values based on typical serving sizes.`;
       
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
-      const prompt = `You are a health advisor AI. Analyze the following health metrics and provide a concise, actionable health suggestion (max 2-3 sentences):
+      const prompt = `You are a sophisticated health advisor AI. Analyze the following health metrics for a user:
 
 Steps: ${steps || 'Not tracked'}
 Heart Rate: ${heart_rate || 'Not tracked'} bpm
@@ -118,12 +118,49 @@ Blood Pressure: ${blood_pressure || 'Not tracked'} mmHg (systolic)
 Blood Sugar: ${blood_sugar || 'Not tracked'} mg/dL
 Sleep Hours: ${sleep_hours || 'Not tracked'} hours
 
-Compare these values with global medical standards and provide personalized advice. Be encouraging and specific.`;
+Your task:
+1. Compare these specific values against global health standards (cite WHO, CDC, or AHA guidelines where relevant).
+2. Identify any potential risks or excellent progress.
+3. Provide a "Smart Analysis" summary that feels personalized and medical-grade but easy to understand.
+4. Give 1-2 specific, actionable recommendations.
 
-      const result = await model.generateContent(prompt);
-      const analysis = result.response.text();
-      
-      return res.status(200).json({ analysis });
+Format the output as a concise but insightful paragraph. Do not use markdown formatting like bolding or headers, just plain text.`;
+
+      try {
+        const result = await model.generateContent(prompt);
+        const analysis = result.response.text();
+        
+        return res.status(200).json({ analysis });
+      } catch (genError) {
+        console.error('Gemini Generation Error:', genError);
+        return res.status(500).json({ 
+          error: 'Failed to generate analysis', 
+          details: genError.message 
+        });
+      }
+    }
+
+    // TEST CONNECTION
+    if (method === 'POST' && action === 'test-connection') {
+      try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const prompt = "Hello, are you working? Reply with 'Yes, I am functional.'";
+        
+        const result = await model.generateContent(prompt);
+        const message = result.response.text();
+        
+        return res.status(200).json({ 
+          message: message,
+          model: 'gemini-1.5-flash',
+          status: 'connected'
+        });
+      } catch (error) {
+        console.error('AI Connection Test Error:', error);
+        return res.status(500).json({ 
+          error: 'AI Connection Failed', 
+          details: error.message 
+        });
+      }
     }
 
     return res.status(400).json({ error: 'Invalid action or method' });
