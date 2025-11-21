@@ -106,18 +106,24 @@ Estimate realistic values based on typical serving sizes.`;
 
     // ANALYZE HEALTH DATA
     if (method === 'POST' && action === 'analyze-health') {
-      const { steps, heart_rate, blood_pressure, blood_sugar, sleep_hours } = req.body;
+      const { weight: weightData, steps, heart_rate, blood_pressure, blood_sugar, sleep_hours } = req.body;
       
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       
+      // Extract weight and height if weight is an object
+      const weight = typeof weightData === 'object' && weightData !== null ? weightData.value : weightData;
+      const height = typeof weightData === 'object' && weightData !== null ? weightData.height : null;
+      
       const prompt = `You are a sophisticated health advisor AI. Analyze the following health metrics for a user:
 
-Weight: ${req.body.weight || 'Not tracked'} kg
+Weight: ${weight || 'Not tracked'} kg${height ? `\nHeight: ${height} cm` : ''}
 Steps: ${steps || 'Not tracked'}
 Heart Rate: ${heart_rate || 'Not tracked'} bpm
 Blood Pressure: ${blood_pressure || 'Not tracked'} mmHg
 Blood Sugar: ${blood_sugar || 'Not tracked'} mg/dL
 Sleep Hours: ${sleep_hours || 'Not tracked'} hours
+
+${height && weight ? `Calculate BMI: ${(weight / ((height / 100) ** 2)).toFixed(1)} and include it in your weight analysis.` : ''}
 
 Your task is to provide a structured analysis for EACH metric.
 Return ONLY a valid JSON object with this exact structure (no markdown formatting, just raw JSON):
@@ -127,7 +133,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown formattin
     {
       "title": "Weight Analysis",
       "icon": "⚖️",
-      "analysis": "Brief analysis of weight status...",
+      "analysis": "Brief analysis of weight status${height ? ' including BMI' : ''}...",
       "rating": 4
     },
     {
