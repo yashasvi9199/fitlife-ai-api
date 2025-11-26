@@ -1,10 +1,8 @@
 // Authentication middleware for FitLife AI API
 const { createClient } = require('@supabase/supabase-js');
+const { supabaseUrl, supabaseServiceRoleKey } = require('../config/env');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 const extractUserId = (req) => {
   if (req.body && req.body.user_id) return req.body.user_id;

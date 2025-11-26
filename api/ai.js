@@ -1,14 +1,19 @@
 const cloudinary = require('cloudinary').v2;
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { cloudinaryConfig, geminiApiKey } = require('../config/env');
 
 cloudinary.config({
-  cloud_name: process.env.VITE_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.VITE_CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: cloudinaryConfig.cloudName,
+  api_key: cloudinaryConfig.apiKey,
+  api_secret: cloudinaryConfig.apiSecret
 });
 
+if (!geminiApiKey) {
+  throw new Error('GEMINI_API_KEY is not configured.');
+}
+
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(geminiApiKey);
 
 /**
  * @param {import('@vercel/node').VercelRequest} req

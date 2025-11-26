@@ -1,11 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
 const { authenticateUser, authorizeUser } = require('../middleware/auth');
 const { errorHandler } = require('../utils/errorHandler');
+const { supabaseUrl, supabaseServiceRoleKey } = require('../config/env');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 // CORS configuration with allowed origins
 const allowedOrigins = [

@@ -1,8 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const { supabaseUrl, supabaseServiceRoleKey, supabaseAnonKey } = require('../config/env');
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 /**
  * @param {import('@vercel/node').VercelRequest} req
@@ -25,8 +23,8 @@ async function handler(req, res) {
     // GET CONFIG - Return public Supabase config
     if (method === 'GET' && action === 'config') {
       return res.status(200).json({
-        url: process.env.SUPABASE_URL,
-        anonKey: process.env.VITE_SUPABASE_ANON_KEY
+        url: supabaseUrl,
+        anonKey: supabaseAnonKey
       });
     }
 
