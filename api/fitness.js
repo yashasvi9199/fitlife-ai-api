@@ -1,31 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
-const { authenticateUser, authorizeUser } = require('../middleware/auth');
-const { errorHandler } = require('../utils/errorHandler');
-const { supabaseUrl, supabaseServiceRoleKey } = require('../config/env');
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-// CORS configuration with allowed origins
-const allowedOrigins = [
-  'https://fitlife-ai.vercel.app',
-  'https://yashasvi9199.github.io',
-  'http://localhost:5173',
-  'http://localhost:3000'
-];
-
-/**
- * @param {import('@vercel/node').VercelRequest} req
- * @param {import('@vercel/node').VercelResponse} res
- */
-async function handler(req, res) {
-  // Secure CORS handling
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0]);
-  }
-  
+module.exports = async function handler(req, res) {
+  // CORS headers - Allow requests from frontend
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
@@ -38,73 +19,45 @@ async function handler(req, res) {
   const { action } = req.query;
 
   try {
-    // Apply authentication
-    await authenticateUser(req, res, () => {});
-
     // CREATE ROUTINE
     if (method === 'POST' && action === 'create') {
-      req.body.user_id = req.user.id;
-      await authorizeUser(req, res, () => {});
-      
-      const { name, exercises } = req.body;
-      
-      // Validate exercises array
-      if (!Array.isArray(exercises) || exercises.length === 0) {
-        return res.status(400).json({ error: 'Exercises array required' });
-      }
-
+      const { user_id, name, exercises } = req.body;
       const { data, error } = await supabase
         .from('fitness_routines')
-        .insert([{ user_id: req.user.id, name, exercises }])
+        .insert([{ user_id, name, exercises }])
         .select();
 
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return res.status(200).json(data[0]);
     }
 
     // GET ROUTINES
     if (method === 'GET' && action === 'list') {
-      req.query.user_id = req.query.user_id || req.user.id;
-      await authorizeUser(req, res, () => {});
-      
+      const { user_id } = req.query;
       const { data, error } = await supabase
         .from('fitness_routines')
         .select('*')
-        .eq('user_id', req.authorizedUserId);
+        .eq('user_id', user_id);
 
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return res.status(200).json(data);
     }
 
     // UPDATE ROUTINE
     if (method === 'PUT' && action === 'update') {
-      req.body.user_id = req.user.id;
-      await authorizeUser(req, res, () => {});
-      
       const { id, name, exercises } = req.body;
-      
-      // Validate exercises array
-      if (!Array.isArray(exercises) || exercises.length === 0) {
-        return res.status(400).json({ error: 'Exercises array required' });
-      }
-
       const { data, error } = await supabase
         .from('fitness_routines')
         .update({ name, exercises })
         .eq('id', id)
-        .eq('user_id', req.user.id)
         .select();
 
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return res.status(200).json(data[0]);
     }
 
     return res.status(400).json({ error: 'Invalid action or method' });
   } catch (error) {
-    // Use centralized error handling
-    return errorHandler(error, req, res);
+    return res.status(500).json({ error: error.message });
   }
 }
-
-module.exports = handler;
-module.exports.default = handler;

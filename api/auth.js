@@ -1,12 +1,10 @@
 const { createClient } = require('@supabase/supabase-js');
-const { supabaseUrl, supabaseServiceRoleKey, supabaseAnonKey } = require('../config/env');
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-/**
- * @param {import('@vercel/node').VercelRequest} req
- * @param {import('@vercel/node').VercelResponse} res
- */
-async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -23,8 +21,8 @@ async function handler(req, res) {
     // GET CONFIG - Return public Supabase config
     if (method === 'GET' && action === 'config') {
       return res.status(200).json({
-        url: supabaseUrl,
-        anonKey: supabaseAnonKey
+        url: process.env.VITE_SUPABASE_URL,
+        anonKey: process.env.VITE_SUPABASE_ANON_KEY
       });
     }
 
@@ -38,16 +36,7 @@ async function handler(req, res) {
       });
 
       if (error) throw error;
-      
-      // Immediately sign the user in so the client gets a session token
-      const { data: sessionData, error: signinError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (signinError) throw signinError;
-
-      return res.status(200).json({ user: data.user, session: sessionData.session });
+      return res.status(200).json({ user: data.user });
     }
 
     // SIGNIN (verify credentials)
@@ -70,6 +59,3 @@ async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
-
-module.exports = handler;
-module.exports.default = handler;

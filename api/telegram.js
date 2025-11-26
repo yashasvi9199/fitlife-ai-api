@@ -1,8 +1,10 @@
 const { createClient } = require('@supabase/supabase-js');
-const { supabaseUrl, supabaseServiceRoleKey } = require('../config/env');
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS headers - Allow requests from frontend
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -110,6 +112,3 @@ async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
-
-module.exports = handler;
-module.exports.default = handler;

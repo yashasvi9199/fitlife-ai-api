@@ -1,25 +1,16 @@
 const cloudinary = require('cloudinary').v2;
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { cloudinaryConfig, geminiApiKey } = require('../config/env');
 
 cloudinary.config({
-  cloud_name: cloudinaryConfig.cloudName,
-  api_key: cloudinaryConfig.apiKey,
-  api_secret: cloudinaryConfig.apiSecret
+  cloud_name: process.env.VITE_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.VITE_CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-if (!geminiApiKey) {
-  throw new Error('GEMINI_API_KEY is not configured.');
-}
-
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(geminiApiKey);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-/**
- * @param {import('@vercel/node').VercelRequest} req
- * @param {import('@vercel/node').VercelResponse} res
- */
-async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS headers - Allow requests from frontend
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -54,7 +45,6 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
   "carbs": <number in grams>,
   "fat": <number in grams>
 }
-
 Estimate realistic values based on typical serving sizes.`;
 
       // Convert base64 to image part
@@ -268,6 +258,3 @@ For the 'rating', give a score from 1 to 5 stars based on global health standard
     return res.status(500).json({ error: error.message });
   }
 }
-
-module.exports = handler;
-module.exports.default = handler;
