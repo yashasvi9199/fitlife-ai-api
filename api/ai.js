@@ -55,8 +55,6 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
   "fat": <number in grams>
 }
 
-module.exports = handler;
-module.exports.default = handler;
 Estimate realistic values based on typical serving sizes.`;
 
       // Convert base64 to image part
@@ -270,3 +268,6 @@ For the 'rating', give a score from 1 to 5 stars based on global health standard
     return res.status(500).json({ error: error.message });
   }
 }
+
+module.exports = handler;
+module.exports.default = handler;
