@@ -10,7 +10,11 @@ cloudinary.config({
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-module.exports = async function handler(req, res) {
+/**
+ * @param {import('@vercel/node').VercelRequest} req
+ * @param {import('@vercel/node').VercelResponse} res
+ */
+async function handler(req, res) {
   // CORS headers - Allow requests from frontend
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -45,6 +49,9 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
   "carbs": <number in grams>,
   "fat": <number in grams>
 }
+
+module.exports = handler;
+module.exports.default = handler;
 Estimate realistic values based on typical serving sizes.`;
 
       // Convert base64 to image part
