@@ -10,16 +10,10 @@ cloudinary.config({
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+const handleCors = require('./utils/cors');
+
 module.exports = async function handler(req, res) {
-  // CORS headers - Allow requests from frontend
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
-  // Handle preflight OPTIONS request
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   const { method } = req;
   const { action } = req.query;
@@ -28,7 +22,7 @@ module.exports = async function handler(req, res) {
     // ANALYZE IMAGE
     if (method === 'POST' && action === 'analyze') {
       const { image } = req.body;
-      
+
       // Upload to Cloudinary
       const result = await cloudinary.uploader.upload(image, {
         folder: 'fitlife-food-images'
@@ -36,7 +30,7 @@ module.exports = async function handler(req, res) {
 
       // Analyze with Gemini Vision
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      
+
       const prompt = `Analyze this food image and provide nutrition information in JSON format.
 Return ONLY a valid JSON object with this exact structure (no markdown, no extra text):
 {
@@ -57,7 +51,7 @@ Estimate realistic values based on typical serving sizes.`;
 
       const geminiResult = await model.generateContent([prompt, imagePart]);
       const responseText = geminiResult.response.text();
-      
+
       // Parse JSON from response
       let nutritionData;
       try {
@@ -84,7 +78,7 @@ Estimate realistic values based on typical serving sizes.`;
     // GET NUTRITION DATA
     if (method === 'GET' && action === 'nutrition') {
       const { barcode } = req.query;
-      
+
       // Use native https module
       const https = require('https');
       const nutritionData = await new Promise((resolve, reject) => {
@@ -100,20 +94,20 @@ Estimate realistic values based on typical serving sizes.`;
           });
         }).on('error', reject);
       });
-      
+
       return res.status(200).json(nutritionData);
     }
 
     // ANALYZE HEALTH DATA
     if (method === 'POST' && action === 'analyze-health') {
       const { weight: weightData, steps, heart_rate, blood_pressure, blood_sugar, sleep_hours } = req.body;
-      
+
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      
+
       // Extract weight and height if weight is an object
       const weight = typeof weightData === 'object' && weightData !== null ? weightData.value : weightData;
       const height = typeof weightData === 'object' && weightData !== null ? weightData.height : null;
-      
+
       const prompt = `You are a sophisticated health advisor AI. Analyze the following health metrics for a user:
 
 Weight: ${weight || 'Not tracked'} kg${height ? `\nHeight: ${height} cm` : ''}
@@ -172,13 +166,13 @@ For the 'rating', give a score from 1 to 5 stars based on global health standard
         // Clean up any potential markdown code blocks from the response
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         const analysis = JSON.parse(jsonStr);
-        
+
         return res.status(200).json({ analysis });
       } catch (genError) {
         console.error('Gemini Generation Error:', genError);
-        return res.status(500).json({ 
-          error: 'Failed to generate analysis', 
-          details: genError.message 
+        return res.status(500).json({
+          error: 'Failed to generate analysis',
+          details: genError.message
         });
       }
     }
@@ -203,9 +197,9 @@ For the 'rating', give a score from 1 to 5 stars based on global health standard
       } catch (error) {
         console.error('Quote Generation Error:', error);
         // Fallback quote
-        return res.status(200).json({ 
-          quote: "The only bad workout is the one that didn't happen.", 
-          author: "Unknown" 
+        return res.status(200).json({
+          quote: "The only bad workout is the one that didn't happen.",
+          author: "Unknown"
         });
       }
     }
@@ -216,28 +210,28 @@ For the 'rating', give a score from 1 to 5 stars based on global health standard
         // 1. List available models
         const listResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
         const listData = await listResponse.json();
-        
+
         if (!listResponse.ok) {
           throw new Error(`Failed to list models: ${listData.error?.message || listResponse.statusText}`);
         }
 
-        const availableModels = listData.models 
+        const availableModels = listData.models
           ? listData.models.filter(m => m.supportedGenerationMethods?.includes('generateContent')).map(m => m.name)
           : [];
 
         // 2. Try to generate content with a known model (preferring flash, then pro)
         const modelName = availableModels.find(m => m.includes('flash')) || availableModels.find(m => m.includes('pro')) || 'models/gemini-pro';
-        
+
         // Clean up model name for SDK if needed (SDK usually takes 'gemini-pro', API returns 'models/gemini-pro')
         const sdkModelName = modelName.replace('models/', '');
 
         const model = genAI.getGenerativeModel({ model: sdkModelName });
         const prompt = "Hello, are you working? Reply with 'Yes'.";
-        
+
         const result = await model.generateContent(prompt);
         const message = result.response.text();
-        
-        return res.status(200).json({ 
+
+        return res.status(200).json({
           message: message,
           testedModel: sdkModelName,
           availableModels: availableModels,
@@ -245,9 +239,9 @@ For the 'rating', give a score from 1 to 5 stars based on global health standard
         });
       } catch (error) {
         console.error('AI Connection Test Error:', error);
-        return res.status(500).json({ 
-          error: 'AI Connection Failed', 
-          details: error.message 
+        return res.status(500).json({
+          error: 'AI Connection Failed',
+          details: error.message
         });
       }
     }

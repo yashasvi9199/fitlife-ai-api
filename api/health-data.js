@@ -5,13 +5,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const handleCors = require('./utils/cors');
+
 module.exports = async function handler(req, res) {
-  
+  if (handleCors(req, res)) return;
+
   //Debugging log
   console.log('Environment check:', {
-      hasUrl: !!process.env.VITE_SUPABASE_URL,
-      hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
-    });
+    hasUrl: !!process.env.VITE_SUPABASE_URL,
+    hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+  });
 
   const { method } = req; // Fix for method not found
   if (method === 'POST') {
@@ -25,23 +28,23 @@ module.exports = async function handler(req, res) {
       if (error) throw error;
       return res.status(200).json(data);
     } catch (error) {
-        console.error('Handler error:', error);
-        return res.status(500).json({ error: error.message });
+      console.error('Handler error:', error);
+      return res.status(500).json({ error: error.message });
     }
   } else if (method === 'GET') {
-        try {
-        const { user_id, type } = req.query;
-        let query = supabase.from('health_records').select('*').eq('user_id', user_id);
-        if (type) query = query.eq('type', type);
-        
-        const { data, error } = await query;
-        if (error) throw error;
-        return res.status(200).json(data);
-        } catch (error) {
-        return res.status(500).json({ error: error.message });
-        }
-    } else {
-        res.setHeader('Allow', ['GET', 'POST']);
-        res.status(405).end(`Method ${method} Not Allowed`);
+    try {
+      const { user_id, type } = req.query;
+      let query = supabase.from('health_records').select('*').eq('user_id', user_id);
+      if (type) query = query.eq('type', type);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return res.status(200).json(data);
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
     }
+  } else {
+    res.setHeader('Allow', ['GET', 'POST']);
+    res.status(405).end(`Method ${method} Not Allowed`);
+  }
 }
